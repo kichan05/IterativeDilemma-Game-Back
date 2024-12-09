@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebRTC 데이터 채널 테스트</title>
+</head>
+<body>
+<h1>WebRTC 데이터 채널</h1>
+<input type="text" name="chat" id="chat">
+<button id="submit">메시지 전송</button>
+<button id="create">Offer 전달</button>
+</body>
+<script>
+  const chat = document.querySelector("#chat");
+  const submit = document.querySelector("#submit");
+  const create = document.querySelector("#create");
+
+  const socket = new WebSocket('ws://localhost:3000');
+
+  socket.onopen = () => {
+    console.log('WebSocket 연결이 열렸습니다.');
+    createOffer();
+  };
+
+  socket.onmessage = (event) => {
+    if (event.data instanceof Blob) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const message = JSON.parse(reader.result);
+        console.log('서버로부터 받은 메시지:', message);
+
+        if (message.type === 'offer') {
+          handleOffer(message.offer);
+        } else if (message.type === 'answer') {
+          handleAnswer(message.answer);
+        } else if (message.type === 'icecandidate') {
+          handleICECandidate(message.candidate);
+        }
+      }
+
+      reader.readAsText(event.data);
+    }
+  };
+
+  const peerConnection = new RTCPeerConnection();
+
+  peerConnection.onicecandidate = (event) => {
+    if (event.candidate) {
+      socket.send(JSON.stringify({
+        type: 'icecandidate',
+        candidate: event.candidate
+      }));
+    }
+  };
+
+  peerConnection.ondatachannel = e => {
+    const receivedChannel = e.channel;
+    receivedChannel.onopen = () => {
+      console.log("데이터 체널이 열였습니다.");
+    }
+
+    receivedChannel.onmessage = e => {
+      console.log("받은 메시지", e.data);
+    }
+  }
+
+  // 데이터 채널 생성
+  const dataChannel = peerConnection.createDataChannel("myDataChannel", {
+    reliable: true
+  });
+
+  submit.addEventListener("click", () => {
+    if (dataChannel.readyState === 'open') {
+      const message = chat.value
+      dataChannel.send(message);
+      console.log('메시지가 전송되었습니다.', message);
+    } else {
+      console.log('데이터 채널이 열리지 않았습니다. 잠시 후 다시 시도해주세요.');
+    }
+  });
+
+  create.addEventListener("click", () => {
+  })
+
+  async function createOffer() {
+    const offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+
+    socket.send(JSON.stringify({type: 'offer', offer: offer}));
+  }
+
+  async function handleOffer(offer) {
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+
+    const answer = await peerConnection.createAnswer();
+    await peerConnection.setLocalDescription(answer);
+
+    socket.send(JSON.stringify({type: 'answer', answer: answer}));
+  }
+
+  async function handleAnswer(answer) {
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+  }
+
+  function handleICECandidate(candidate) {
+    peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+  }
+</script>
+</html>
