@@ -26,12 +26,25 @@ wss.on('connection', (ws) => {
       ws.roomId = roomId;
       rooms[roomId].push(ws);
 
-      console.log("방 생성 요청 끗", roomId)
+      console.log("방 생성 요청 끗", rooms)
 
       ws.send(JSON.stringify({
         type: socketType.ROOM_CREATE_REQ,
         roomId,
       }))
+    }
+    else if(json.type === socketType.ROOM_JOIN) {
+      const roomId = json.roomId;
+      const name = json.name;
+      if(roomId in rooms) {
+        rooms[roomId].push(ws);
+        ws.roomId = roomId;
+
+        ws.send(JSON.stringify({
+          type: socketType.ROOM_JOIN_SUCCESS,
+          roomId, name
+        }))
+      }
     }
     // wss.clients.forEach((client) => {
     //   if (client !== ws && client.readyState === WebSocket.OPEN) {
@@ -41,6 +54,7 @@ wss.on('connection', (ws) => {
   });
 
   ws.on('close', () => {
+    // rooms[ws.roomId].remove(ws);
     console.log('클라이언트가 연결을 종료');
   });
 });
