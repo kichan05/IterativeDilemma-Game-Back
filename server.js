@@ -65,6 +65,15 @@ wss.on('connection', (ws) => {
           }))
         }
         break
+      case socketType.RTC_OFFER:
+        roomId = json.roomId;
+        rooms[roomId].send(message);
+        break;
+      case socketType.RTC_ANSWER:
+        roomId = json.roomId;
+          //todo 유저가 없을경우 예외처리
+        rooms[roomId].users.map(u => u.name = json.name)[0].send(message);
+        break;
     }
 
     ws.on('close', () => {
