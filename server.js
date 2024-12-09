@@ -2,8 +2,8 @@ const express = require('express');
 const WebSocket = require('ws');
 
 const app = express();
-const server = app.listen(3000, () => {
-  console.log('Server run at http://localhost:3000');
+const server = app.listen(8080, () => {
+  console.log('Server run at http://localhost:8080');
 });
 
 const wss = new WebSocket.Server({ server });
