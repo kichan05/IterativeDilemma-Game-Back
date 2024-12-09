@@ -24,6 +24,7 @@ wss.on('connection', (ws) => {
 
       rooms[roomId] = [];
       ws.roomId = roomId;
+      ws.name = "호스트"
       rooms[roomId].push(ws);
 
       console.log("방 생성 요청 끗", rooms)
@@ -37,13 +38,23 @@ wss.on('connection', (ws) => {
       const roomId = json.roomId;
       const name = json.name;
       if(roomId in rooms) {
+        console.log(`${name}이(가) ${roomId}방에 가입했습니다.`)
         rooms[roomId].push(ws);
         ws.roomId = roomId;
+        ws.name = name
 
         ws.send(JSON.stringify({
           type: socketType.ROOM_JOIN_SUCCESS,
           roomId, name
         }))
+        rooms[roomId].forEach((client) => {
+          if(client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({
+              type: socketType.ROOM_DATA_UPDATE,
+              users : rooms[roomId].map(u => u.name)
+            }))
+          }
+        })
       }
     }
     // wss.clients.forEach((client) => {
