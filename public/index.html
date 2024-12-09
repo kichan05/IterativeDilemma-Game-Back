@@ -19,7 +19,7 @@
   const socket = new WebSocket('ws://localhost:3000');
 
   socket.onopen = () => {
-    console.log('WebSocket 연결이 열렸습니다.');
+    console.log('WebSocket 연결');
     createOffer();
   };
 
@@ -28,7 +28,6 @@
       const reader = new FileReader();
       reader.onload = () => {
         const message = JSON.parse(reader.result);
-        console.log('서버로부터 받은 메시지:', message);
 
         if (message.type === 'offer') {
           handleOffer(message.offer);
@@ -65,7 +64,6 @@
     }
   }
 
-  // 데이터 채널 생성
   const dataChannel = peerConnection.createDataChannel("myDataChannel", {
     reliable: true
   });
