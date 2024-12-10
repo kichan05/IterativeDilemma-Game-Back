@@ -6,7 +6,8 @@ const socketType = {
   ROOM_DATA_UPDATE: "roomDataUpdate",
   RTC_OFFER: "rtcOffer",
   RTC_ANSWER: "rtcAnswer",
-  ICE_CANDIDATE: "icecandidate",
+  ICE_CANDIDATE_SEND: "icecandidateSend",
+  ICE_CANDIDATE_RECEIVE : "iceCandidateReceive"
 }
 
 module.exports = socketType;

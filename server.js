@@ -18,13 +18,14 @@ wss.on('connection', (ws) => {
 
   ws.on('message', (message) => {
     const json = JSON.parse(message);
-    let roomId
+    let roomId, isHost, targets;
 
     switch (json.type) {
       case socketType.ROOM_CREATE:
         roomId = getRandom(1001, 9999);
 
         ws.roomId = roomId;
+        ws.isHost = true;
         ws.name = "호스트"
         rooms[roomId] = {roomId, host: ws, users: []};
 
@@ -43,6 +44,7 @@ wss.on('connection', (ws) => {
           console.log(`${name}이(가) ${roomId}방에 가입했습니다.`)
           ws.roomId = roomId;
           ws.name = name;
+          ws.isHost = false;
           rooms[roomId].users.push(ws);
 
           ws.send(JSON.stringify({
@@ -67,17 +69,29 @@ wss.on('connection', (ws) => {
         break
       case socketType.RTC_OFFER:
         roomId = json.roomId;
-        rooms[roomId].send(message);
+        console.log(roomId)
+        rooms[roomId].host.send(message);
         break;
       case socketType.RTC_ANSWER:
         roomId = json.roomId;
-          //todo 유저가 없을경우 예외처리
-        rooms[roomId].users.map(u => u.name = json.name)[0].send(message);
+        const target = rooms[roomId].users.filter(u => u.name = json.name)[0];
+        console.log(target)
+        target.send(message);
+        break;
+      case socketType.ICE_CANDIDATE_SEND:
+        roomId = ws.roomId;
+        isHost = ws.isHost;
+
+        targets = isHost ? rooms[roomId].users : [rooms[roomId].host];
+        targets.forEach((u) => {
+          u.send(JSON.stringify({
+            ...json, type: socketType.ICE_CANDIDATE_RECEIVE
+          }))
+        })
         break;
     }
 
     ws.on('close', () => {
-      // rooms[ws.roomId].remove(ws);
       console.log('클라이언트가 연결을 종료');
     });
   });
