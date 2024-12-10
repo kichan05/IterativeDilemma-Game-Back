@@ -7,7 +7,8 @@ const socketType = {
   RTC_OFFER: "rtcOffer",
   RTC_ANSWER: "rtcAnswer",
   ICE_CANDIDATE_SEND: "icecandidateSend",
-  ICE_CANDIDATE_RECEIVE : "iceCandidateReceive"
+  ICE_CANDIDATE_RECEIVE : "iceCandidateReceive",
+  ERROR : "error",
 }
 
 module.exports = socketType;

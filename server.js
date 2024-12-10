@@ -43,7 +43,7 @@ function handleRoomJoin(ws, json) {
       .forEach((client) => {
         client.send(JSON.stringify({
           type: socketType.ROOM_DATA_UPDATE,
-          room : getRoomData(roomId),
+          room: getRoomData(roomId),
         }))
       });
   }
@@ -85,7 +85,6 @@ wss.on('connection', (ws) => {
 
   ws.on('message', (message) => {
     const json = JSON.parse(message);
-    // let roomId, isHost, targets;
 
     switch (json.type) {
       case socketType.ROOM_CREATE:
@@ -106,7 +105,27 @@ wss.on('connection', (ws) => {
     }
 
     ws.on('close', () => {
-      console.log('클라이언트가 연결을 종료');
+      const {isHost, roomId, name} = ws;
+      if (isHost) {
+        rooms[roomId].users.forEach(user => {
+          user.send(JSON.stringify({
+            type: socketType.ERROR,
+            message: "호스트가 방을 종료했습니다."
+          }));
+          user.close();
+        });
+        delete rooms[roomId];
+        console.log(`방 ${roomId} 삭제됨.`);
+      } else {
+        rooms[roomId].users = rooms[roomId].users.filter(user => user !== ws);
+        const target = [...rooms[roomId].users, rooms[roomId].host];
+        target.forEach(client => {
+          client.send(JSON.stringify({
+            type: socketType.ROOM_DATA_UPDATE,
+            room: getRoomData(roomId),
+          }));
+        });
+      }
     });
   });
 })
