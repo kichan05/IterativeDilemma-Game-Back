@@ -27,26 +27,32 @@ function handleRoomCreate(ws) {
 function handleRoomJoin(ws, json) {
   const {roomId, name} = json;
 
-  if (roomId in rooms) {
-    ws.roomId = roomId;
-    ws.name = name;
-    ws.isHost = false;
-    rooms[roomId].users.push(ws);
-
+  if (!(roomId in rooms)) {
     ws.send(JSON.stringify({
-      type: socketType.ROOM_JOIN_SUCCESS,
-      room: getRoomData(roomId),
-      name: name,
-    }))
-    const users = rooms[roomId].users;
-    [...users, rooms[roomId].host]
-      .forEach((client) => {
-        client.send(JSON.stringify({
-          type: socketType.ROOM_DATA_UPDATE,
-          room: getRoomData(roomId),
-        }))
-      });
+      type: socketType.ERROR,
+      message: "방이 존재하지 않습니다."
+    }));
+    return;
   }
+
+  ws.roomId = roomId;
+  ws.name = name;
+  ws.isHost = false;
+  rooms[roomId].users.push(ws);
+
+  ws.send(JSON.stringify({
+    type: socketType.ROOM_JOIN_SUCCESS,
+    room: getRoomData(roomId),
+    name: name,
+  }))
+  const users = rooms[roomId].users;
+  [...users, rooms[roomId].host]
+    .forEach((client) => {
+      client.send(JSON.stringify({
+        type: socketType.ROOM_DATA_UPDATE,
+        room: getRoomData(roomId),
+      }))
+    });
 }
 
 function handleRTCOffer(json) {
